@@ -1,4 +1,4 @@
-﻿// Copyright © 2017,2018 Igor Sergienko. Contacts: <kbacob@mail.ru>
+﻿// Copyright © 2017,2018 Igor Sergienko. Contacts: <kbacob@mail.ru> 
 
 namespace ik.Utils
 {

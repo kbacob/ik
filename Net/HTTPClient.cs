@@ -1,3 +1,5 @@
+// Copyright © 2017,2018 Igor Sergienko. Contacts: <kbacob@mail.ru>
+
 namespace ik.Net
 {
     using System;

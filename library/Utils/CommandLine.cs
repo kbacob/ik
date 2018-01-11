@@ -2,7 +2,6 @@
 
 namespace ik.Utils
 {
-    // You also needs ik_Variables and ik_Strings
     using ik.Types;
 
     /// <summary>

@@ -28,6 +28,5 @@ namespace ik.Net
             }
             throw new ArgumentNullException();
         }
-
     }
 }

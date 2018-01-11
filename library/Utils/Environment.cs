@@ -6,10 +6,19 @@ namespace ik.Utils
     using System.Collections;
     using System.Runtime.InteropServices;
 
+    /// <summary>
+    /// Решение задач в той, или иной мере, связананых со средой выполнения кода.
+    /// </summary>
     public static class Environment
     {
-        public enum DirectoryClass
+        /// <summary>
+        /// Системный каталог
+        /// </summary>
+        public enum HostDirectory
         {
+            /// <summary>
+            /// %USER%\AppData\Local\Temp (%TMP%) в Windows или /var/tmp в Linux
+            /// </summary>
             Tmp
         }
         
@@ -48,11 +57,16 @@ namespace ik.Utils
             throw new ArgumentNullException();
         }
 
-        static public string GetDirectory(DirectoryClass DirectoryClass)
+        /// <summary>
+        /// Получить путь к системному каталогу. Так как разных средах исполнения они разные, наверное проще так.
+        /// </summary>
+        /// <param name="hostDirectory">Предопределённый системный каталог</param>
+        /// <returns></returns>
+        static public string GetDirectory(HostDirectory hostDirectory)
         {
-            switch(DirectoryClass)
+            switch(hostDirectory)
             {
-                case DirectoryClass.Tmp:
+                case HostDirectory.Tmp:
                     if (GetOS() == OSPlatform.Windows) 
                     {
                         return GetVariable("TMP");
@@ -67,6 +81,5 @@ namespace ik.Utils
             }
             return null;
         }
-
     }
 }

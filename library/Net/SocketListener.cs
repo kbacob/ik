@@ -56,6 +56,7 @@ namespace ik.Net
             }
         }
     }
+
     sealed class SocketDispatcher
     {
         private const int intClientReaderBufferSize = 4096;

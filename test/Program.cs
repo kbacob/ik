@@ -1,45 +1,37 @@
-﻿namespace ConsoleApp1
+﻿// Copyright В© 2017,2018 Igor Sergienko. Contacts: <kbacob@mail.ru>
+
+namespace ConsoleApp1
 {
     using System;
-    using System.Threading;
+    using System.Net;
     using System.Net.Sockets;
     using ik.Net;
     using ik.Utils;
 
-
+    /// <summary>
+    ///  Teas app
+    /// </summary>
     class Program
     {
-        static int intMaxThreads = 32;
-
         static void Main(string[] args)
         {
-            ThreadPool.SetMaxThreads(intMaxThreads, intMaxThreads);
-            ThreadPool.SetMinThreads(2, 2);
-
-            ContentTypes.Init();
-            HTTPServer http = new HTTPServer("any", 80);
-
-            http.AddHttpWorker(@"^hell\S$", Test1);
-            http.AddHttpWorker(@"/", Test2);
-
-            Console.WriteLine(ik.Utils.Environment.GetVariable("TMP"));
+            ik.Main.Init(args);
+           
+            HTTPServer http = new HTTPServer("any", 80); // если на Linux то либо порт > 1024 либо от суперюзера гонять, иначе будет исключение по AccessDenied
+            http.CSocketWorker.Add("Test Worker 1", "hello", Test1, SocketWorker.SocketWorkerEntryType.Url, Strings.EqualAnalysisType.Strong, SocketWorker.SocketWorkerJobType.SendText); // https://127.0.0.1/HEYhello[/пофиг-чё?и&тут&тоже&плевать 
+            
             http.Start();
+            Console.WriteLine("Press Enter to exit");
             Console.Read();
             http.Stop();
 
-            ContentTypes.Exit();
+            ik.Main.Exit();
         }
 
-        static string Test1(ClientHeader clientHeader, NetworkStream stream)
+        static Response Test1(ClientHeader clientHeader, NetworkStream stream)
         {
-            Console.WriteLine(clientHeader["ClientIp"]);
-            return "Hello";
-        }
-
-        static string Test2(ClientHeader clientHeader, NetworkStream stream)
-        {
-            Console.WriteLine(clientHeader["ClientIp"]);
-            return ContentTypes.GetContentType("mks");
+            Console.WriteLine(clientHeader["ClientIP"]);
+            return new Response("Hello", HttpStatusCode.OK);
         }
 
     }

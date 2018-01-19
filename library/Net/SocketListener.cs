@@ -6,8 +6,6 @@ namespace ik.Net
     using System.Threading;
     using System.Net;
     using System.Net.Sockets;
-    using System.Collections.Generic;
-    using ik.Utils;
 
     class SocketListener
     {
@@ -49,74 +47,19 @@ namespace ik.Net
         {
             while (boolStopListener == false)
             {
-                TcpClient tcpClient = await tcpListener.AcceptTcpClientAsync();
+                try
+                {
+                    TcpClient tcpClient = await tcpListener.AcceptTcpClientAsync();
 
-                ThreadPool.QueueUserWorkItem(new WaitCallback(fnConnectionDispatcher), tcpClient);
+                    ThreadPool.QueueUserWorkItem(new WaitCallback(fnConnectionDispatcher), tcpClient);
+                }
+                catch (Exception)
+                {
+                    // Какой то пиздец, причин которого я пока что постигнуть не могу - вызываю в вообще не связанном c этим местом статичном классе метод, того-же класса при чём, и вдруг здесь исключенение...
+                    // Пришлось пока что поставить затычку.
+                    //throw;
+                }
                 Thread.Sleep(intListenerSleepInterval);
-            }
-        }
-    }
-
-    sealed class SocketDispatcher
-    {
-        private const int intClientReaderBufferSize = 4096;
-        private const int intClientRequestMaxSize = 4096;
-
-        public void Main(Object StateInfo)
-        {
-            TcpClient tcpStateInfo = (TcpClient)StateInfo;
-
-            if (tcpStateInfo.Connected)
-            {
-                NetworkStream objStream = tcpStateInfo.GetStream();
-                string strRawClientRequestHeader = _ReadClientData(objStream);
-                ClientHeader headerRequest = new ClientHeader(strRawClientRequestHeader, new Dictionary<string, string>(){{"ClientIP", tcpStateInfo.Client.RemoteEndPoint.ToString()}});
-                Response response;
-                string strWorks;
-
-                strWorks = ""; //_Worker(headerRequest, objStream);
-
-                if (Strings.Exists(strWorks))
-                {
-                    response = new Response(strWorks);
-                }
-                else
-                {
-                    response = new Response("404", HttpStatusCode.NotFound);
-                }
-
-                _WriteClientData(objStream, response.Value);
-                tcpStateInfo.Close();
-            }
-            return;
-        }
-
-        private string _ReadClientData(NetworkStream objStream)
-        {
-            string strRequest = "";
-
-            if (objStream.CanRead)
-            {
-                byte[] byteBuffer = new byte[intClientReaderBufferSize];
-                int intCount;
-
-                while ((intCount = objStream.Read(byteBuffer, 0, byteBuffer.Length)) > 0)
-                {
-                    strRequest += System.Text.Encoding.ASCII.GetString(byteBuffer, 0, intCount);
-                    if (strRequest.IndexOf("\r\n\r\n") >= 0 || strRequest.Length > intClientRequestMaxSize) break;
-                }
-            }
-            return strRequest;
-        }
-        private void _WriteClientData(NetworkStream objStream, byte[] byteBuffer)
-        {
-            if (byteBuffer != null)
-            {
-                if (byteBuffer.Length > 0)
-                    if (objStream.CanWrite)
-                    {
-                        objStream.Write(byteBuffer, 0, byteBuffer.Length);
-                    }
             }
         }
     }

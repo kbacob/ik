@@ -2,6 +2,7 @@
 
 namespace ik.Utils
 {
+    using System.Collections.Generic;
     using System.IO;
     using System.Text.RegularExpressions;
     using ik.Types;
@@ -31,6 +32,7 @@ namespace ik.Utils
                     if (objStream != null)
                     {
                         Variables objIniFile = new Variables();
+                        Dictionary<string, string> LDefines = new Dictionary<string, string>();
                         string strCurrentSectionName = strDefaultSectionName;
 
                         objIniFile.Add(strCurrentSectionName);
@@ -43,21 +45,49 @@ namespace ik.Utils
                             {
                                 if (strTmp[0] != '#')
                                 {
+                                    string strDefinePattern = @"^DEFINE\s+?(\S+?)\s*?=\s*\""(.*?)\""";
                                     string strSectionPattern = @"^\[\s*([\w+\s*]+)\s*\]";
+                                    string strParamPattern = @"(\w+)\s*=\s*\""(.*)?\""\s*\#*.?";
 
-                                    if (Regex.IsMatch(strTmp, strSectionPattern))
+                                    if (Regex.IsMatch(strTmp, strDefinePattern))
+                                    {
+                                        Match matchTmp = Regex.Match(strTmp, strDefinePattern);
+                                        string strDefineName = matchTmp.Groups[1].Value;
+                                        string strDefineValue = matchTmp.Groups[2].Value;
+
+                                        if (LDefines.ContainsKey(strDefineName))
+                                        {
+                                            LDefines[strDefineName] = strDefineValue;
+                                        }
+                                        else
+                                        {
+                                            LDefines.Add(strDefineName, strDefineValue);
+                                        }
+                                    }
+                                    else if (Regex.IsMatch(strTmp, strSectionPattern))
                                     {
                                         strCurrentSectionName = Regex.Match(strTmp, strSectionPattern).Groups[1].Value;
                                     }
                                     else
                                     {
-                                        string strParamPattern = @"(\w+)\s*=\s*\""(.*)?\""\s*\#*.?";
-
                                         if (Regex.IsMatch(strTmp, strParamPattern))
                                         {
                                             Match matchTmp = Regex.Match(strTmp, strParamPattern);
+                                            string strParamName = matchTmp.Groups[1].Value;
+                                            string strParamValue = matchTmp.Groups[2].Value;
 
-                                            objIniFile.Add(strCurrentSectionName, matchTmp.Groups[1].Value, matchTmp.Groups[2].Value);
+                                            if (Strings.ContainsByRegex(strParamValue, @"\%(.+)?\%"))
+                                            {
+                                                foreach (KeyValuePair<string,string> Item in LDefines)
+                                                {
+                                                    while (Strings.ContainsByRegex(strParamValue, @"\%" + Item.Key + @"\%"))
+                                                    {
+                                                        strParamValue = Strings.ReplaceByRegex(strParamValue, @"\%" + Item.Key + @"\%", Item.Value);
+                                                    }
+                                                }
+                                            }
+
+                                            objIniFile.Add(strCurrentSectionName, strParamName, strParamValue);
                                         }
                                     }
                                 }

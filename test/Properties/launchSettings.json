@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ik.test": {
+      "commandName": "Project",
+      "commandLineArgs": "ini=\"C:\\Users\\User\\source\\repos\\ik\\test\\program.ini\""
+    }
+  }
+}

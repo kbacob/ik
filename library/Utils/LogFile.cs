@@ -7,7 +7,7 @@ namespace ik.Utils
     using System.Text;
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
-
+    
     /// <summary>
     /// Система записи сообщений в журнал. 
     /// <para>Позволяет просто указать, куда писать и дальше тупо вызывать LofFile.WriteLine("BlaBlaBla"), что на выходе даст файл со строками вида "1980-01-01 12:12:14 UTC [I] BlaBlaBla"</para>
@@ -19,16 +19,17 @@ namespace ik.Utils
         /// <summary>
         ///  Тип log-файла
         /// </summary>
+        [Flags]
         public enum LogType
         {
             /// <summary>
-            /// Не выводить сообщения
-            /// </summary>
-            Null,
-            /// <summary>
             /// Выводить сообщения на консоль
             /// </summary>
-            Console,
+            Console = 1,
+            /// <summary>
+            /// Выводить сообщения в консоль отладки
+            /// </summary>
+            Debug,
             /// <summary>
             /// Записывать сообщения в файл
             /// </summary>
@@ -66,7 +67,7 @@ namespace ik.Utils
             /// <summary>
             /// [INTERNAL] Использовать формат времени, указанный при инициализации
             /// </summary>
-            Default
+            Default = int.MaxValue
         }
         /// <summary>
         /// Тип сообщения, отбражаемый как префикс, непосредствено перед сообщением
@@ -83,12 +84,12 @@ namespace ik.Utils
             Panic
         }
 
-        static private Dictionary<MessageType, String> LMessageTypePrefix;
-        static private Dictionary<TimeFormat, String> LTimeFormat;
-        static private LogType logType;
+        static private Dictionary<MessageType, String> LMessageTypePrefix = null;
+        static private Dictionary<TimeFormat, String> LTimeFormat = null;
+        static private LogType logType = LogType.Debug | LogType.File;
         static private TimeFormat timeFormat;
-        static private string strLogFile;
-        static private OSPlatform OS;
+        static private string strLogFile = @"application.log";
+        static private OSPlatform OS = Environment.GetOS();
 
         /// <summary>
         /// Инициализация системы записи журнала сообщений
@@ -97,14 +98,16 @@ namespace ik.Utils
         /// <param name="timeFormat">Формат записи времени сообщения</param>
         /// <param name="strLogFile">Имя файла журнала сообщений</param>
         /// <returns></returns>
-        static public bool Init(LogType logType = LogType.File, TimeFormat timeFormat = TimeFormat.ShortLocalized, string strLogFile = @"application.log")
+        static public void Init(LogType logType = LogType.Debug | LogType.File , TimeFormat timeFormat = TimeFormat.ShortLocalized, string strLogFile = @"application.log")
         {
             LogFile.logType = logType;
             LogFile.timeFormat = timeFormat;
+            LogFile.strLogFile = strLogFile;
+
             OS = Environment.GetOS();
             LMessageTypePrefix = new Dictionary<MessageType, string>
             {
-                { MessageType.Verbose , "" },
+                { MessageType.Verbose , "[ ]" },
                 { MessageType.Trace   , "[T]" },
                 { MessageType.Debug   , "[D]" },
                 { MessageType.Info    , "[I]" },
@@ -121,33 +124,18 @@ namespace ik.Utils
                 { TimeFormat.ShortUTC      , "yyyyMMddHHmmss" },
                 { TimeFormat.FullUTC       , "yyyy/MM/dd HH:mm:ss:ffff UTC" }
             };
-
-            switch (LogFile.logType)
-            {
-                case LogType.Null:
-                case LogType.Console:
-                    LogFile.strLogFile = null;
-                    return true;
-
-                case LogType.File:
-                    LogFile.strLogFile = strLogFile;
-                    return true;
-
-                case LogType.Syslog:
-                    return true;
-
-                default:
-                    LogFile.logType = LogType.Null;
-                    LogFile.strLogFile = null;
-                    return false;
-            }
         }
         /// <summary>
         /// Закрытие журнала сообщений
         /// </summary>
         static public void Close()
         {
-            LogFile.WriteLine("", MessageType.Verbose, TimeFormat.None);
+            LogFile.WriteLine("End", MessageType.Verbose, TimeFormat.None);
+
+            LMessageTypePrefix.Clear();
+            LTimeFormat.Clear();
+            LMessageTypePrefix = null;
+            LTimeFormat = null;
             return;
         }
 
@@ -183,117 +171,7 @@ namespace ik.Utils
                 }
             }
         }
-
-        static public MessageType GetMessageType(int intMessageType = 0)
-        {
-            if (intMessageType >= 0 && intMessageType <= 7)
-            {
-                switch (intMessageType)
-                {
-                    case 0: return MessageType.Verbose; 
-                    case 1: return MessageType.Trace; 
-                    case 2: return MessageType.Debug; 
-                    case 3: return MessageType.Info; 
-                    case 4: return MessageType.Warning;
-                    case 5: return MessageType.Error; 
-                    case 6: return MessageType.Critical;
-                    case 7: return MessageType.Panic;
-                }
-            }
-            throw new Exception("Invalid intMessageType=" + intMessageType.ToString());
-        }
-        static public MessageType GetMessageType(string strMessageType = null)
-        {
-            if (Strings.Exists(strMessageType))
-            {
-                int intMessageType;
-
-                switch (strMessageType)
-                {
-                    case "Verbose":
-                        intMessageType = 0;
-                        break;
-
-                    case "Trace":
-                        intMessageType = 0;
-                        break;
-
-                    case "Debug":
-                        intMessageType = 0;
-                        break;
-
-                    case "Info":
-                        intMessageType = 0;
-                        break;
-
-                    case "Warning":
-                        intMessageType = 0;
-                        break;
-
-                    case "Error":
-                        intMessageType = 0;
-                        break;
-
-                    case "Critical":
-                        intMessageType = 0;
-                        break;
-
-                    case "Panic":
-                        intMessageType = 0;
-                        break;
-
-                    default:
-                        throw new Exception("Unknown strMessageType \"" + strMessageType + "\"");
-                }
-                return GetMessageType(intMessageType);
-            }
-            throw new Exception("Null strMessageType");
-        }
-        static public LogType GetLogType(int intLogType = 0)
-        {
-            if (intLogType >= 0 && intLogType <= 3)
-            {
-                switch(intLogType)
-                {
-                    case 0: return LogType.Null;
-                    case 1: return LogType.Console;
-                    case 2: return LogType.File;
-                    case 3: return LogType.Syslog;
-                }
-            }
-            throw new Exception("Invalid intLogType=" + intLogType.ToString());
-        }
-        static public LogType GetLogType(string strLogType)
-        {
-            if (Strings.Exists(strLogType))
-            {
-                int intLogType;
-                switch (strLogType)
-                {
-                    case "Null":
-                        intLogType = 0;
-                        break;
-
-                    case "Console":
-                        intLogType = 1;
-                        break;
-
-                    case "File":
-                        intLogType = 2;
-                        break;
-
-                    case "Syslog":
-                        intLogType = 3;
-                        break;
-
-                    default:
-                        throw new Exception("Invalid strLogType = \"" + strLogType + "\"");
-                }
-                return GetLogType(intLogType);
-            }
-            throw new Exception("Empty strLogType");
-        }
-
+        
         /// <summary>
         /// Отправить сообщение в журнал.
         /// </summary>
@@ -302,6 +180,9 @@ namespace ik.Utils
         /// <param name="timeFormat">Формат указания времени сообщения. По умолчанию будет использован формат, переданный LogFile.Init()</param>
         static public void WriteLine(string strText, MessageType messageType = MessageType.Verbose, TimeFormat timeFormat = TimeFormat.Default)
         {
+            if (LMessageTypePrefix == null || LTimeFormat == null) return;
+            if (LMessageTypePrefix.Count == 0 || LTimeFormat.Count == 0) return;
+
             string strTime = "";
             string strMessageType = LMessageTypePrefix[messageType];
             TimeFormat tmpTimeFormat = timeFormat == TimeFormat.Default ? LogFile.timeFormat : timeFormat;
@@ -322,14 +203,18 @@ namespace ik.Utils
             if (strTime.Length > 0) strTime += " ";
             if (strMessageType.Length > 0) strMessageType += " ";
 
-            if (logType == LogType.Console)
+            if (logType.HasFlag(LogType.Console))
             {
                 Console.WriteLine(strTime + strMessageType + strText);
             }
-            else if (logType == LogType.File || logType == LogType.Syslog) // TODO: Windows Log, Linux syslog and may be OSX
+            if (logType.HasFlag(LogType.Debug))
+            {
+                System.Diagnostics.Debug.WriteLine(strMessageType + strText);
+            }
+            if (logType.HasFlag(LogType.File) || logType.HasFlag(LogType.Syslog))
             {
                 if (Strings.Exists(strLogFile))
-                { 
+                {
                     StreamWriter objStream = new StreamWriter(strLogFile, encoding: Encoding.Default, append: true);
 
                     if (objStream != null)
@@ -343,5 +228,14 @@ namespace ik.Utils
                 }
             }
         }
+
+        static public void Verbose(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Verbose, timeFormat);
+        static public void Trace(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Trace, timeFormat);
+        static public void Debug(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Debug, timeFormat);
+        static public void Info(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Info, timeFormat);
+        static public void Warning(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Warning, timeFormat);
+        static public void Error(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Error, timeFormat);
+        static public void Critical(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Critical, timeFormat);
+        static public void Panic(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Panic, timeFormat);
     }
 }

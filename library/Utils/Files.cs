@@ -96,41 +96,7 @@ namespace ik.Utils
                     {
                         if (Strings.Exists(strMask))
                         {
-                            string strRegexPattern = @"^";
-
-                            foreach (char chrSymbol in strMask)
-                            {
-                                switch (chrSymbol)
-                                {
-                                    case '?':
-                                        strRegexPattern += @".";
-                                        break;
-
-                                    case '*':
-                                        strRegexPattern += @".*?";
-                                        break;
-
-                                    case '.':
-                                        strRegexPattern += @"\\.";
-                                        break;
-
-                                    default:
-                                        strRegexPattern += chrSymbol;
-                                        break;
-                                }
-                            }
-
-                            strRegexPattern += @"\\Z";
-
-                            Match mt = Regex.Match(strFileName, strRegexPattern);
-
-                            if (mt != null)
-                            {
-                                if (mt.Success == true)
-                                {
-                                    return true;
-                                }
-                            }
+                            if (Strings.Contains(strFileName, strMask, Strings.EqualAnalysisType.WildMask)) return true;
                         }
                     }
                 }

@@ -25,7 +25,7 @@ namespace ik.Net
         {
             if (DTypes == null)
             {
-                string strMimeTypesFilePath = Files.FixPathByOS(ik.Utils.Environment.GetDirectory(ik.Utils.Environment.DirectoryClass.Tmp) + @"\" + Files.GetOnlyName(strMimeTypesListUrl));
+                string strMimeTypesFilePath = Files.FixPathByOS(ik.Utils.Environment.GetDirectory(ik.Utils.Environment.HostDirectory.Tmp) + @"\" + Files.GetOnlyName(strMimeTypesListUrl));
                 ik.Net.HTTPClient hc = new ik.Net.HTTPClient();
                 
                 DTypes = new Dictionary<string, List<string>>();

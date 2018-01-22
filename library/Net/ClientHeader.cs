@@ -27,31 +27,44 @@ namespace ik.Net
         public ClientHeader(string strClientRequest, Dictionary<string, string> dEnviromentVariables)
         {
             Clear();
-            if (Strings.Exists(strClientRequest))
+            if (!String.IsNullOrEmpty(strClientRequest))
             {
-                string[] strStrings = strClientRequest.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                var strStrings = strClientRequest.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
 
                 if (strStrings.Length > 0)
                 {
-                    if (Strings.Exists(strStrings[0]))
+                    if (!String.IsNullOrEmpty(strStrings[0]))
                     {
-                        Match match = Regex.Match(strStrings[0], @"^(\S*)?\s(\S+)?\s(\S+)$"); // parse request method string like 'GET something HTTP/X.Y'
+                        var match = Regex.Match(strStrings[0], @"^(?<Method>\S+)\s+(?<Uri>\S+)\s+(?<Protocol>\S+).*$"); 
 
                         if (match != null)
                         {
-                            if (match.Groups.Count == 4)
+                            if (match.Groups.Count > 1)
                             {
-                                Add("Method", match.Groups[1].Value);
-                                Add("Uri", match.Groups[2].Value);
-                                Add("Protocol", match.Groups[3].Value);
+                                Add("Method", match.Groups["Method"].Value);
+                                Add("Uri", match.Groups["Uri"].Value);
+                                Add("Protocol", match.Groups["Protocol"].Value);
 
-                                match = Regex.Match(this["Uri"], @"^(?:https*:\/\/\S+){0,1}(?:.*)\/(\S*)\?(\S+)$"); // parse request url string like '/index.php?param1=value&param2=value'
+                                match = Regex.Match(this["Uri"], @"^(?<Path>\/.*){0,1}(?<Entry>\/.*)"); 
 
-                                if (match.Groups.Count == 3)
+                                if (match.Groups.Count > 1)
                                 {
-                                    Add("EntryPoint", match.Groups[1].Value.Length > 0 ? match.Groups[1].Value : @"/");
-                                    Add("QueryString", match.Groups[2].Value);
-                                    query = HttpUtility.ParseQueryString(HttpUtility.UrlDecode(match.Groups[2].Value));
+                                    var strEntryPoint = match.Groups["Entry"].Value;
+                                    Add("Path", match.Groups["Path"].Value);
+
+                                    if (strEntryPoint.Contains("?"))
+                                    {
+                                        match = Regex.Match(strEntryPoint, @"(?<EntryPoint>.*)\?(?<Query>.*){0,1}");
+
+                                        Add("EntryPoint", match.Groups["EntryPoint"].Value);
+                                        Add("QueryString", match.Groups["Query"].Value);
+                                        query = HttpUtility.ParseQueryString(HttpUtility.UrlDecode(match.Groups["Query"].Value));
+                                    }
+                                    else
+                                    {
+                                        Add("EntryPoint", strEntryPoint);
+                                        Add("QueryString", "");
+                                    }
                                 }
                                 else
                                 {
@@ -64,11 +77,11 @@ namespace ik.Net
                 }
                 if (strStrings.Length > 1)
                 {
-                    for (int intTmp = 1; intTmp < strStrings.Length; intTmp++)
+                    for (var intTmp = 1; intTmp < strStrings.Length; intTmp++)
                     {
-                        if (Strings.Exists(strStrings[intTmp]))
+                        if (!String.IsNullOrEmpty(strStrings[intTmp]))
                         {
-                            Match match = Regex.Match(strStrings[intTmp], @"^(\S+)\:\s*(.*)?$");
+                            var match = Regex.Match(strStrings[intTmp], @"^(\S+)\:\s*(.*)?$");
 
                             if (match != null)
                             {
@@ -85,9 +98,9 @@ namespace ik.Net
             {
                 if(dEnviromentVariables.Count > 0)
                 {
-                    foreach(KeyValuePair<string,string> tmpEntry in dEnviromentVariables)
+                    foreach(var tmpEntry in dEnviromentVariables)
                     {
-                        if (!this.ContainsKey(tmpEntry.Key))
+                        if (!ContainsKey(tmpEntry.Key))
                         {
                             Add(tmpEntry.Key, tmpEntry.Value);
                         }
@@ -102,7 +115,7 @@ namespace ik.Net
 
         private bool MethodIs(string strMethodCode)
         {
-            if (Strings.Exists(strMethodCode))
+            if (!String.IsNullOrEmpty(strMethodCode))
             {
                 if (ContainsKey("Method"))
                 {

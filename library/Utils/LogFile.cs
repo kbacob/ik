@@ -20,7 +20,7 @@ namespace ik.Utils
         ///  Тип log-файла
         /// </summary>
         [Flags]
-        public enum LogType
+        public enum LogType : uint
         {
             /// <summary>
             /// Выводить сообщения на консоль
@@ -29,15 +29,15 @@ namespace ik.Utils
             /// <summary>
             /// Выводить сообщения в консоль отладки
             /// </summary>
-            Debug,
+            Debug = 2,
             /// <summary>
             /// Записывать сообщения в файл
             /// </summary>
-            File,
+            File = 4,
             /// <summary>
             /// [TODO] Записывать сообщения в лог системы, пока что пишутся в файл 
             /// </summary>
-            Syslog
+            Syslog = 8
         }
         /// <summary>
         /// Формат префикса строки сообщения с указанием времени события 
@@ -130,7 +130,7 @@ namespace ik.Utils
         /// </summary>
         static public void Close()
         {
-            LogFile.WriteLine("End", MessageType.Verbose, TimeFormat.None);
+            WriteLine("End", MessageType.Verbose, TimeFormat.None);
 
             LMessageTypePrefix.Clear();
             LTimeFormat.Clear();
@@ -183,9 +183,9 @@ namespace ik.Utils
             if (LMessageTypePrefix == null || LTimeFormat == null) return;
             if (LMessageTypePrefix.Count == 0 || LTimeFormat.Count == 0) return;
 
-            string strTime = "";
-            string strMessageType = LMessageTypePrefix[messageType];
-            TimeFormat tmpTimeFormat = timeFormat == TimeFormat.Default ? LogFile.timeFormat : timeFormat;
+            var strTime = "";
+            var strMessageType = LMessageTypePrefix[messageType];
+            var tmpTimeFormat = timeFormat == TimeFormat.Default ? LogFile.timeFormat : timeFormat;
 
             switch (tmpTimeFormat)
             {
@@ -213,9 +213,9 @@ namespace ik.Utils
             }
             if (logType.HasFlag(LogType.File) || logType.HasFlag(LogType.Syslog))
             {
-                if (Strings.Exists(strLogFile))
+                if (!String.IsNullOrEmpty(strLogFile))
                 {
-                    StreamWriter objStream = new StreamWriter(strLogFile, encoding: Encoding.Default, append: true);
+                    var objStream = new StreamWriter(strLogFile, encoding: Encoding.Default, append: true);
 
                     if (objStream != null)
                     {

@@ -91,14 +91,14 @@ namespace ik.Types
         /// <returns>Имя или значение параметра, или NULL если что-то не так.</returns>
         private string _NameOrValueByIndex(int intSectionIndex, int intParamIndex, bool boolNeedValue = false)
         {
-            string strSectionName = SectionNameByIndex(intSectionIndex);
+            var strSectionName = SectionNameByIndex(intSectionIndex);
 
             if (strSectionName != null)
             {
                 if (intParamIndex < this[strSectionName].Count)
                 {
-                    uint intTmp = 0;
-                    foreach (KeyValuePair<string, string> val in this[strSectionName])
+                    var intTmp = 0;
+                    foreach (var val in this[strSectionName])
                     {
                         if (intParamIndex == intTmp)
                         {
@@ -121,9 +121,9 @@ namespace ik.Types
         {
             if (intSectionIndex < this.Count)
             {
-                uint iCnt = 0;
+                var iCnt = 0;
 
-                foreach (KeyValuePair<string, Dictionary<string, string>> val in this)
+                foreach (var val in this)
                 {
                     if (intSectionIndex == iCnt) return val.Key;
                     iCnt++;

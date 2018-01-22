@@ -20,9 +20,11 @@ namespace ik.Utils
         /// <returns>Имя файла с расширением</returns>
         static public string GetOnlyName(string strName)
         {
+            if (String.IsNullOrEmpty(strName)) throw new ArgumentNullException();
+
             if (strName.Contains(@"\") || strName.Contains(@"/"))
             {
-                Match mt = Regex.Match(strName, @".*[\\\/](.*)\Z");
+                var mt = Regex.Match(strName, @".*[\\\/](.*)\Z");
 
                 if (mt.Groups.Count == 2) return mt.Groups[1].Value;
             }
@@ -37,9 +39,11 @@ namespace ik.Utils
         /// <returns>Путь к файлу</returns>
         static public string GetOnlyPath(string strName)
         {
+            if (String.IsNullOrEmpty(strName)) throw new ArgumentNullException();
+
             if (strName.Contains(@"\") || strName.Contains(@"/"))
             {
-                Match mt = Regex.Match(strName, @"(.*)?[\\\/].*\Z");
+                var mt = Regex.Match(strName, @"(.*)?[\\\/].*\Z");
 
                 if (mt.Groups.Count == 2) return FixPathByOS(mt.Groups[1].Value);
             }
@@ -54,11 +58,13 @@ namespace ik.Utils
         /// <returns>Расширение файла</returns>
         static public string GetOnlyExtension(string strName)
         {
-            string strTmp = GetOnlyName(strName);
+            if (String.IsNullOrEmpty(strName)) throw new ArgumentNullException();
+
+            var strTmp = GetOnlyName(strName);
 
             if (strTmp.Contains("."))
             {
-                Match mt = Regex.Match(strTmp, @".*\.(.+)?\Z");
+                var mt = Regex.Match(strTmp, @".*\.(.+)?\Z");
 
                 if (mt.Groups.Count == 2) return mt.Groups[1].Value;
             }
@@ -72,11 +78,9 @@ namespace ik.Utils
         /// <returns>true, если указанный файл существует</returns>
         static public bool Exists(string strName)
         {
-            if (Strings.Exists(strName))
-            {
-                return File.Exists(FixPathByOS(strName));
-            }
-            throw new ArgumentNullException();
+            if (String.IsNullOrEmpty(strName)) throw new ArgumentNullException();
+
+            return File.Exists(FixPathByOS(strName));
         }
 
         /// <summary>
@@ -88,18 +92,11 @@ namespace ik.Utils
         /// <returns></returns>
         static public bool EqualByMask(string strFileName, string[] strFileMasksList, bool boolCaseSentetivity = false)
         {
-            if (Strings.Exists(strFileName))
+            if (String.IsNullOrEmpty(strFileName) || Strings.IsNullOrEmpty(strFileMasksList)) throw new ArgumentNullException();
+
+            foreach (string strMask in strFileMasksList)
             {
-                if (strFileMasksList != null)
-                {
-                    foreach (string strMask in strFileMasksList)
-                    {
-                        if (Strings.Exists(strMask))
-                        {
-                            if (Strings.Contains(strFileName, strMask, Strings.EqualAnalysisType.WildMask)) return true;
-                        }
-                    }
-                }
+                if (Strings.ContainsByWildmask(strFileName, strMask)) return true;
             }
 
             return false;
@@ -112,24 +109,16 @@ namespace ik.Utils
         /// <returns></returns>
         static public string FixPathByOS(string strPathForFix)
         {
-            if(Strings.Exists(strPathForFix))
-            {
-                if (strPathForFix.Contains(@"\") || strPathForFix.Contains(@"/"))
-                {
-                    OSPlatform OS = Environment.GetOS();
+            if(String.IsNullOrEmpty(strPathForFix)) throw new ArgumentNullException();
 
-                    if (OS == OSPlatform.Windows)
-                    {
-                        return strPathForFix.Replace(@"/", @"\");
-                    }
-                    else if(OS == OSPlatform.Linux || OS == OSPlatform.OSX)
-                    {
-                        return strPathForFix.Replace(@"\", @"/");
-                    }
-                }
-                return strPathForFix;
+            if (strPathForFix.Contains(@"\") || strPathForFix.Contains(@"/"))
+            {
+                var OS = Environment.GetOS(); 
+
+                if (OS == OSPlatform.Windows) return strPathForFix.Replace(@"/", @"\");
+                if (OS == OSPlatform.Linux || OS == OSPlatform.OSX) return strPathForFix.Replace(@"\", @"/");
             }
-            throw new ArgumentNullException();
+            return strPathForFix;
         }
     }
 }

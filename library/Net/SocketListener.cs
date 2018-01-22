@@ -16,7 +16,7 @@ namespace ik.Net
         private ConnectionDispatcher fnConnectionDispatcher;
 
         private const int intListenerSleepInterval = 250;
-        private bool boolStopListener;
+        private static bool boolStopListener;
 
         public SocketListener(IPAddress ipAddress, int intPort)
         {
@@ -40,27 +40,19 @@ namespace ik.Net
         public void Stop()
         {
             boolStopListener = true;
-            tcpListener.Stop();
+            //Thread.Sleep(500);
         }
 
         async private void MainCycle()
         {
             while (boolStopListener == false)
             {
-                try
-                {
-                    TcpClient tcpClient = await tcpListener.AcceptTcpClientAsync();
+                var TcpClient = await tcpListener.AcceptTcpClientAsync();
 
-                    ThreadPool.QueueUserWorkItem(new WaitCallback(fnConnectionDispatcher), tcpClient);
-                }
-                catch (Exception)
-                {
-                    // Какой то пиздец, причин которого я пока что постигнуть не могу - вызываю в вообще не связанном c этим местом статичном классе метод, того-же класса при чём, и вдруг здесь исключенение...
-                    // Пришлось пока что поставить затычку.
-                    //throw;
-                }
+                ThreadPool.QueueUserWorkItem(new WaitCallback(fnConnectionDispatcher), TcpClient);
                 Thread.Sleep(intListenerSleepInterval);
             }
+            tcpListener.Stop();
         }
     }
 }

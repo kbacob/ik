@@ -3,7 +3,6 @@
 namespace ik.Utils
 {
     using System;
-    using System.Collections;
     using System.Runtime.InteropServices;
 
     /// <summary>
@@ -19,7 +18,7 @@ namespace ik.Utils
             /// <summary>
             /// %USER%\AppData\Local\Temp (%TMP%) в Windows или /var/tmp в Linux
             /// </summary>
-            Tmp
+            Tmp = 1
         }
         
         /// <summary>
@@ -50,11 +49,9 @@ namespace ik.Utils
         /// <returns>Значение или null</returns>
         static public string GetVariable(string strVariableName)
         {
-            if(Strings.Exists(strVariableName))
-            {
-                return System.Environment.GetEnvironmentVariable(strVariableName);
-            }
-            throw new ArgumentNullException();
+            if(String.IsNullOrEmpty(strVariableName)) throw new ArgumentNullException();
+            
+            return System.Environment.GetEnvironmentVariable(strVariableName);
         }
 
         /// <summary>

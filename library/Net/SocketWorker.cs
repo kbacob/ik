@@ -69,6 +69,7 @@ namespace ik.Net
         }
         public delegate Response SocketWorkerFunction(ClientHeader clientHeader, NetworkStream objStream);
         public string strCommand = "command";
+        public string strRootDirectory = null;
 
         private const int intClientReaderBufferSize = 4096;
         private const int intClientRequestMaxSize = 4096;
@@ -112,7 +113,10 @@ namespace ik.Net
             switch (socketWorkerItem.SocketWorkerEntryType)
             {
                 case SocketWorkerEntryType.Url:
-                    return Strings.Contains(clientHeader["EntryPoint"], socketWorkerItem.strEntryPointPattern, socketWorkerItem.SocketWorkerEntryAnalysisType);
+                    var strEntryPoint = clientHeader["EntryPoint"];
+
+                    if(!String.IsNullOrEmpty(strEntryPoint)) return Strings.Contains(strEntryPoint, socketWorkerItem.strEntryPointPattern, socketWorkerItem.SocketWorkerEntryAnalysisType);
+                    break;
 
                 case SocketWorkerEntryType.Command:
                     if (clientHeader.query != null)
@@ -127,6 +131,25 @@ namespace ik.Net
 
             return false;
         }
+        private string MakeLocalFilePath(ClientHeader ClientHeader)
+        {
+            if (!String.IsNullOrEmpty(strRootDirectory))
+            {
+                var strPath = strRootDirectory;
+
+                if (!String.IsNullOrEmpty(ClientHeader["Path"])) strPath += ClientHeader["Path"];
+                if (!String.IsNullOrEmpty(ClientHeader["EntryPoint"]) && ClientHeader["EntryPoint"] != "/")
+                {
+                    strPath += ClientHeader["EntryPoint"];
+                    return Files.FixPathByOS(strPath);
+                }
+            }
+            return null;
+        }
+        private bool CheckFile(string strFileName)
+        {
+            return Files.Exists(strFileName);
+        }
 
         /// <summary>
         /// 
@@ -134,13 +157,13 @@ namespace ik.Net
         /// <param name="StateInfo"></param>
         public void Dispatcher(Object StateInfo)
         {
-            TcpClient tcpStateInfo = (TcpClient)StateInfo;
+            var tcpStateInfo = (TcpClient)StateInfo;
 
             if (tcpStateInfo.Connected)
             {
-                NetworkStream objStream = tcpStateInfo.GetStream();
-                string strRawClientRequestHeader = ReadClientData(objStream);
-                ClientHeader headerRequest = new ClientHeader(strRawClientRequestHeader, new Dictionary<string, string>() { { "ClientIP", tcpStateInfo.Client.RemoteEndPoint.ToString() } });
+                var objStream = tcpStateInfo.GetStream();
+                var strRawClientRequestHeader = ReadClientData(objStream);
+                var headerRequest = new ClientHeader(strRawClientRequestHeader, new Dictionary<string, string>() { { "ClientIP", tcpStateInfo.Client.RemoteEndPoint.ToString() } });
 
                 Do(ref headerRequest, ref objStream);
                 tcpStateInfo.Close();
@@ -148,17 +171,13 @@ namespace ik.Net
             return;
         }
 
-        private void Sender(ref Response response, ref NetworkStream objStream)
-        {
-        }
-
         private string ReadClientData(NetworkStream objStream)
         {
-            string strRequest = "";
+            var strRequest = "";
 
             if (objStream.CanRead)
             {
-                byte[] byteBuffer = new byte[intClientReaderBufferSize];
+                var byteBuffer = new byte[intClientReaderBufferSize];
                 int intCount;
 
                 while ((intCount = objStream.Read(byteBuffer, 0, byteBuffer.Length)) > 0)
@@ -169,20 +188,13 @@ namespace ik.Net
             }
             return strRequest;
         }
-        private void WriteClientData(NetworkStream objStream, ref Response Response)
+        private void WriteClientData(NetworkStream objStream, Response Response)
         {
             if (Response != null)
             {
-                if (Response.Value != null)
+                if (objStream.CanWrite)
                 {
-                    if (Response.Value.Length > 0)
-                    {
-                        if (objStream.CanWrite)
-                        {
-                            objStream.WriteAsync(Response.Value, 0, Response.Value.Length);
-                            objStream.FlushAsync();
-                        }
-                    }
+                   Response.Send(objStream);
                 }
             }
         }
@@ -198,26 +210,24 @@ namespace ik.Net
         /// <param name="socketWorkerJobType">Что планируется делать, пока что это не сильно важно но, думаю, потом пригодитя для пре или пост работы с потоком соединения или какими-нибудь буфферами. В общем, TODO</param>
         public void Add(string strWorkerName, string strPattern, SocketWorkerFunction socketWorkerFunction = null, SocketWorkerEntryType socketWorkerEntryType = SocketWorkerEntryType.Command,  Strings.EqualAnalysisType socketWorkerEntryAnalysisType = Strings.EqualAnalysisType.Strong, SocketWorkerJobType socketWorkerJobType = SocketWorkerJobType.SendText)
         {
-            if (Strings.Exists(strWorkerName) && Strings.Exists(strPattern))
+            if (String.IsNullOrEmpty(strWorkerName) && String.IsNullOrEmpty(strPattern)) throw new ArgumentNullException();
+
+            var _item = new SocketWorkerItem
             {
-                SocketWorkerItem _item = new SocketWorkerItem
-                {
-                    strEntryPointPattern = strPattern,
-                    SocketWorkerEntryType = socketWorkerEntryType,
-                    SocketWorkerEntryAnalysisType = socketWorkerEntryAnalysisType,
-                    SocketWorkerJobType = socketWorkerJobType,
-                    SocketWorkerFunction = socketWorkerFunction
-                };
+                strEntryPointPattern = strPattern,
+                SocketWorkerEntryType = socketWorkerEntryType,
+                SocketWorkerEntryAnalysisType = socketWorkerEntryAnalysisType,
+                SocketWorkerJobType = socketWorkerJobType,
+                SocketWorkerFunction = socketWorkerFunction
+            };
 
-                if (socketWorkerFunction == null)
-                {
-                    LogFile.Debug("Null function for SocketWorker named '" + strWorkerName + "' with pattern '" + strPattern + "'");
-                    _item.SocketWorkerFunction = EmptyWorker;
-                }
-
-                Items.Add(strWorkerName, _item);
+            if (socketWorkerFunction == null)
+            {
+                LogFile.Debug("Null function for SocketWorker named '" + strWorkerName + "' with pattern '" + strPattern + "'");
+                _item.SocketWorkerFunction = EmptyWorker;
             }
-            else throw new ArgumentNullException();
+
+            Items.Add(strWorkerName, _item);
         }
 
         /// <summary>
@@ -228,25 +238,36 @@ namespace ik.Net
         /// <returns></returns>
         private void Do(ref ClientHeader clientHeader, ref NetworkStream objStream)
         {
-            Response Response = null;
-            SocketWorkerJobType JobType = SocketWorkerJobType.Other;
+            var Response = (Response)null;
+            var JobType = SocketWorkerJobType.Other;
 
-            if (Items != null)
+            // пробуем отработать воркеры
+            if (Items != null && Items.Count > 0) 
             {
-                if (Items.Count > 0)
+                foreach (var Item in Items)
                 {
-                    foreach (KeyValuePair<string, SocketWorkerItem> Item in Items)
+                    if (CheckPattern(clientHeader, Item.Value))
                     {
-                        if (CheckPattern(clientHeader, Item.Value))
-                        {
-                            Response = Item.Value.SocketWorkerFunction(clientHeader, objStream);
-                            JobType = Item.Value.SocketWorkerJobType;
-                            break;
-                        }
+                        Response = Item.Value.SocketWorkerFunction(clientHeader, objStream);
+                        JobType = Item.Value.SocketWorkerJobType;
+                        break;
                     }
                 }
             }
 
+            // если Response == null значит подходящего воркера не нашлось, пробуем тупо отдать файл
+            if (Response == null)
+            {
+                var strFileName = MakeLocalFilePath(clientHeader);
+
+                if (CheckFile(strFileName))
+                {
+                    Response = new Response(strFileName);
+                    JobType = SocketWorkerJobType.SendFile;
+                }
+            }
+
+            // если Response == null значит подходящих воркера или файлоа не нашлось, отдаём Not Found
             if (Response == null)
             {
                 Response = new Response("404", HttpStatusCode.NotFound);
@@ -258,9 +279,9 @@ namespace ik.Net
                 case SocketWorkerJobType.Other:
                 case SocketWorkerJobType.SendText:
                 case SocketWorkerJobType.SendCode:
-                    WriteClientData(objStream, ref Response);
+                case SocketWorkerJobType.SendFile:
+                    WriteClientData(objStream, Response);
                     break;
-                
             }
         }
     }

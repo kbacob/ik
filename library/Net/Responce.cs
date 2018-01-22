@@ -1,21 +1,68 @@
-// Copyright В© 2017,2018 Igor Sergienko. Contacts: <kbacob@mail.ru>
+// Copyright © 2017,2018 Igor Sergienko. Contacts: <kbacob@mail.ru>
 
 namespace ik.Net
 {
+    using System;
     using System.Net;
+    using System.Net.Sockets;
+    using System.IO;
+    using System.Text;
+    using System.Threading.Tasks;
+    using ik.Utils;
 
-    public sealed class Response
+    public sealed class Response 
     {
-        private string strHeader;
-        private string strData;
+        private string strSourceFile = null;
+        private string strHeader = null;
 
-        public byte[] Value;
+        private string ResponseHeader(string strContentType, long longContentLength, HttpStatusCode httpStatusCode, string strAdditionalTabs = null)
+        {
+            var strResult = "HTTP/1.1 " + (int)httpStatusCode + " " + httpStatusCode.ToString() + "\ncontent-type: " + strContentType + "\ncontent-length: " + longContentLength.ToString();
 
-        private string ResponseHeader(string strContentType, int intContentLength, HttpStatusCode httpStatusCode) => "HTTP/1.1 " + (int)httpStatusCode + " " + httpStatusCode.ToString() + "\nContent - type: " + strContentType + "\nContent - Length: " + intContentLength.ToString() + "\n\n";
-
+            if (!String.IsNullOrEmpty(strAdditionalTabs)) strResult += "\n" + strAdditionalTabs;
+            return strResult + "\n\n";
+        }
+     
         public Response(string strResponce, HttpStatusCode httpStatusCode)
         {
-            Value = System.Text.Encoding.ASCII.GetBytes(ResponseHeader("text/html", strResponce.Length, httpStatusCode) + strResponce);
+            strHeader = ResponseHeader("text/html", strResponce.Length, httpStatusCode) + strResponce;
+        }
+        public Response(string strPath)
+        {
+            if (String.IsNullOrEmpty(strPath)) throw new ArgumentNullException();
+
+            if (Files.Exists(strPath))
+            {
+                var FileInfo = new FileInfo(strPath);
+                var strData = "date: " + FileInfo.CreationTime.ToUniversalTime().ToString("r");
+
+                strHeader = ResponseHeader(ContentTypes.GetContentType(Files.GetOnlyExtension(strPath)), FileInfo.Length, HttpStatusCode.OK, strData);
+                strSourceFile = strPath;
+            }
+            else
+            {
+                strHeader = ResponseHeader("text/html", 3, HttpStatusCode.NotFound) + "404";
+            }
+        }
+
+        public void Send(NetworkStream objStream) // TODO: async
+        {
+            if (objStream != null)
+            {
+                objStream.Write(Encoding.ASCII.GetBytes(strHeader), 0, strHeader.Length);
+
+                if (!String.IsNullOrEmpty(strSourceFile))
+                {
+                    var FileStream = File.Open(strSourceFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+                    if (FileStream != null)
+                    {
+                        FileStream.CopyTo(objStream);
+                        FileStream.Close();
+                    }
+                }
+            }
+            else throw new ArgumentNullException();
         }
     }
 }

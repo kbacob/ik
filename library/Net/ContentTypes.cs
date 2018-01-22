@@ -25,8 +25,8 @@ namespace ik.Net
         {
             if (DTypes == null)
             {
-                string strMimeTypesFilePath = Files.FixPathByOS(ik.Utils.Environment.GetDirectory(ik.Utils.Environment.HostDirectory.Tmp) + @"\" + Files.GetOnlyName(strMimeTypesListUrl));
-                ik.Net.HTTPClient hc = new ik.Net.HTTPClient();
+                var strMimeTypesFilePath = Files.FixPathByOS(Utils.Environment.GetDirectory(Utils.Environment.HostDirectory.Tmp) + @"\" + Files.GetOnlyName(strMimeTypesListUrl));
+                var hc = new HTTPClient();
                 
                 DTypes = new Dictionary<string, List<string>>();
                 
@@ -74,7 +74,7 @@ namespace ik.Net
                 strPathToMimeTypesFile = Files.FixPathByOS(strPathToMimeTypesFile);
                 if (Files.Exists(strPathToMimeTypesFile))
                 {
-                    StreamReader objStream = new StreamReader(Files.FixPathByOS(strPathToMimeTypesFile));
+                    var objStream = new StreamReader(Files.FixPathByOS(strPathToMimeTypesFile));
 
                     if (objStream != null)
                     {
@@ -82,19 +82,18 @@ namespace ik.Net
                         {
                             string strTmp = objStream.ReadLine().Trim(' ', '\t');
 
-                            if (Strings.Exists(strTmp))
+                            if (!String.IsNullOrEmpty(strTmp))
                             {
                                 if (strTmp[0] != '#')
                                 {
-                                    Regex rx = new Regex(@"\s{2,}");
-
-                                    string[] strList = rx.Replace(strTmp, " ").Split(null);
+                                    var rx = new Regex(@"\s{2,}");
+                                    var strList = rx.Replace(strTmp, " ").Split(null);
 
                                     if (strList.Length > 1)
                                     {
-                                        List<string> lExtensions = new List<string>();
+                                        var lExtensions = new List<string>();
 
-                                        for (int intTmp = 1; intTmp < strList.Length; intTmp++)
+                                        for (var intTmp = 1; intTmp < strList.Length; intTmp++)
                                         {
                                             lExtensions.Add(strList[intTmp]);
                                         }
@@ -107,7 +106,7 @@ namespace ik.Net
                                         {
                                             if(boolAppendData == true)
                                             {
-                                                foreach (string strExtension in lExtensions)
+                                                foreach (var strExtension in lExtensions)
                                                 {
                                                     if (!DTypes[strList[0]].Contains(strExtension)) DTypes[strList[0]].Add(strExtension);
                                                 }
@@ -131,19 +130,14 @@ namespace ik.Net
         /// <returns>MIME-тип, или "application/octet-stream", если для указанного расширения не было найдено заранее описанного типа</returns>
         public static string GetContentType(string strExtension)
         {
-            if (DTypes != null)
+            if (String.IsNullOrEmpty(strExtension)) throw new ArgumentNullException();
+
+            if (DTypes != null && DTypes.Count > 0)
             {
-                if (Strings.Exists(strExtension))
+                foreach (var entry in DTypes)
                 {
-                    if (DTypes.Count > 0)
-                    {
-                        foreach (KeyValuePair<string, List<string>> entry in DTypes)
-                        {
-                            if (entry.Value.Contains(strExtension)) return entry.Key;
-                        }
-                    }
+                    if (entry.Value.Contains(strExtension)) return entry.Key;
                 }
-                else throw new ArgumentNullException();
             }
             else throw new ObjectDisposedException("MIME types not initialised");
 
@@ -156,19 +150,11 @@ namespace ik.Net
         /// <returns>Список с возможными расширениями или NULL, если MIME-тип не описан</returns>
         public static List<string> GetExtensions(string strContentType)
         {
-            if (DTypes != null)
+            if (String.IsNullOrEmpty(strContentType)) throw new ArgumentNullException();
+
+            if (DTypes != null  && DTypes.Count > 0)
             {
-                if (Strings.Exists(strContentType))
-                {
-                    if (DTypes.Count > 0)
-                    {
-                        if (DTypes.ContainsKey(strContentType))
-                        {
-                            return DTypes[strContentType];
-                        }
-                    }
-                }
-                else throw new ArgumentNullException();
+                if (DTypes.ContainsKey(strContentType)) return DTypes[strContentType];
             }
             else throw new ObjectDisposedException("MIME types not initialised");
 

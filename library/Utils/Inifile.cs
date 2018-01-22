@@ -2,6 +2,7 @@
 
 namespace ik.Utils
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Text.RegularExpressions;
@@ -23,37 +24,42 @@ namespace ik.Utils
         /// <returns>Разделённый на секции список переменных</returns>
         public static Variables Read(string strPathToIniFile, string strDefaultSectionName = "Main")
         {
-            if (Strings.Exists(strPathToIniFile))
+            if (!String.IsNullOrEmpty(strPathToIniFile))
             {
                 if (File.Exists(strPathToIniFile))
                 {
-                    StreamReader objStream = new StreamReader(strPathToIniFile);
+                    var objStream = new StreamReader(strPathToIniFile);
 
                     if (objStream != null)
                     {
-                        Variables objIniFile = new Variables();
-                        Dictionary<string, string> LDefines = new Dictionary<string, string>();
-                        string strCurrentSectionName = strDefaultSectionName;
+                        var objIniFile = new Variables();
+                        var LDefines = new Dictionary<string, string>();
+                        var strCurrentSectionName = strDefaultSectionName;
 
                         objIniFile.Add(strCurrentSectionName);
 
                         while (!objStream.EndOfStream)
                         {
-                            string strTmp = objStream.ReadLine().Trim(' ', '\t');
+                            var strTmp = objStream.ReadLine().Trim(' ', '\t');
 
-                            if (Strings.Exists(strTmp))
+                            if (!String.IsNullOrEmpty(strTmp))
                             {
                                 if (strTmp[0] != '#')
                                 {
-                                    string strDefinePattern = @"^DEFINE\s+?(\S+?)\s*?=\s*\""(.*?)\""";
-                                    string strSectionPattern = @"^\[\s*([\w+\s*]+)\s*\]";
-                                    string strParamPattern = @"(\w+)\s*=\s*\""(.*)?\""\s*\#*.?";
+                                    var strDefinePattern  = @"^\s*DEFINE\s+(?<Key>\w+)\s*=\s*\""(?<Value>.*)\""";  // DEFINE SomeDefineName = "something here" 
+                                    var strIncludePattern = @"^\s*INCLUDE\s+\""(?<Value>.+)\""";                   // INCLUDE "path/to/some/ini/file" 
+                                    var strSectionPattern = @"^\s*\[(?<SectionName>.+)\]";                         // [SectionName] 
+                                    var strParamPattern   = @"^\s*(?<Key>\w+)\s*=\s*\""(?<Value>.*)\""";           // Param = "abcd" / or Param = "%SomeDefineName%" / or also Param = "%SomeDefineName% and little bit more or %OtherDefineName%"
 
-                                    if (Regex.IsMatch(strTmp, strDefinePattern))
+                                    if (Regex.IsMatch(strTmp,strIncludePattern))
                                     {
-                                        Match matchTmp = Regex.Match(strTmp, strDefinePattern);
-                                        string strDefineName = matchTmp.Groups[1].Value;
-                                        string strDefineValue = matchTmp.Groups[2].Value;
+                                        // TODO
+                                    }
+                                    else if (Regex.IsMatch(strTmp, strDefinePattern))
+                                    {
+                                        var matchTmp = Regex.Match(strTmp, strDefinePattern);
+                                        var strDefineName = matchTmp.Groups["Key"].Value;
+                                        var strDefineValue = matchTmp.Groups["Value"].Value;
 
                                         if (LDefines.ContainsKey(strDefineName))
                                         {
@@ -66,25 +72,34 @@ namespace ik.Utils
                                     }
                                     else if (Regex.IsMatch(strTmp, strSectionPattern))
                                     {
-                                        strCurrentSectionName = Regex.Match(strTmp, strSectionPattern).Groups[1].Value;
+                                        strCurrentSectionName = Regex.Match(strTmp, strSectionPattern).Groups["SectionName"].Value;
                                     }
                                     else
                                     {
                                         if (Regex.IsMatch(strTmp, strParamPattern))
                                         {
-                                            Match matchTmp = Regex.Match(strTmp, strParamPattern);
-                                            string strParamName = matchTmp.Groups[1].Value;
-                                            string strParamValue = matchTmp.Groups[2].Value;
+                                            var matchTmp = Regex.Match(strTmp, strParamPattern);
+                                            var strParamName = matchTmp.Groups["Key"].Value;
+                                            var strParamValue = matchTmp.Groups["Value"].Value;
 
-                                            if (Strings.ContainsByRegex(strParamValue, @"\%(.+)?\%"))
+                                            if (Strings.ContainsByRegex(strParamValue, @"\%(.+)?\%")) // DEFINE Lookup
                                             {
-                                                foreach (KeyValuePair<string,string> Item in LDefines)
+                                                foreach (var Item in LDefines)
                                                 {
-                                                    while (Strings.ContainsByRegex(strParamValue, @"\%" + Item.Key + @"\%"))
+                                                    while (Strings.ContainsByRegex(strParamValue, @"\%" + Item.Key + @"\%")) // DEFINE subst
                                                     {
                                                         strParamValue = Strings.ReplaceByRegex(strParamValue, @"\%" + Item.Key + @"\%", Item.Value);
                                                     }
                                                 }
+                                                if (Strings.ContainsByRegex(strParamValue, @"\%(.+)?\%"))
+                                                {
+                                                    // if we found %NOT DEFIENED% then we not touch it
+#if DEBUG
+                                                    // or
+                                                    throw new KeyNotFoundException(strParamValue);
+#endif
+                                                }
+
                                             }
 
                                             objIniFile.Add(strCurrentSectionName, strParamName, strParamValue);
@@ -111,34 +126,29 @@ namespace ik.Utils
         {
             if (objSettings != null)
             {
-                if (Strings.Exists(strFileName))
+                if (!String.IsNullOrEmpty(strFileName))
                 {
-                    StreamWriter objStream = new StreamWriter(strFileName, false);
+                    var objStream = new StreamWriter(strFileName, false);
 
                     if (objStream != null)
                     {
-                        if (strHeader != null)
+                        if (strHeader != null && strHeader.Length > 0)
                         {
-                            if (strHeader.Length > 0)
+                            foreach (string strTmp in strHeader)
                             {
-                                foreach (string strTmp in strHeader)
-                                {
-                                    objStream.WriteLine("# {0}", strTmp);
-                                }
+                                 objStream.WriteLine("# {0}", strTmp);
                             }
                         }
 
                         if (objSettings.Count > 0)
                         {
-
-
-                            for (int intSectionIndex = 0; intSectionIndex < objSettings.Keys.Count; intSectionIndex++)
+                            for (var intSectionIndex = 0; intSectionIndex < objSettings.Keys.Count; intSectionIndex++)
                             {
-                                string strSectionName = objSettings.SectionNameByIndex(intSectionIndex);
+                                var strSectionName = objSettings.SectionNameByIndex(intSectionIndex);
 
                                 objStream.WriteLine("[{0}]", strSectionName);
 
-                                for (int intParam = 0; intParam < objSettings[strSectionName].Count; intParam++)
+                                for (var intParam = 0; intParam < objSettings[strSectionName].Count; intParam++)
                                 {
                                     objStream.WriteLine("{0} = \"{1}\"", objSettings.ParamNameByIndex(intSectionIndex, intParam), objSettings.ValueByIndex(intSectionIndex, intParam));
                                 }

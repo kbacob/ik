@@ -2,6 +2,7 @@
 
 namespace ik.Utils
 {
+    using System;
     using ik.Types;
 
     /// <summary>
@@ -17,22 +18,19 @@ namespace ik.Utils
         /// <returns>Список переменных</returns>
         public static Variables Read(string[] args, string strSectionName = "args")
         {
-            Variables varResult = new Variables();
+            var varResult = new Variables();
 
             if (args.Length > 0)
             {
-                for (uint intTmp = 0; intTmp < args.Length; intTmp++)
+                for (var intTmp = 0; intTmp < args.Length; intTmp++)
                 {
                     if (args[intTmp].Contains("="))
                     {
-                        string[] strTmp = args[intTmp].Split('=');
+                        var strTmp = args[intTmp].Split('=');
 
                         if (strTmp.Length == 2)
                         {
-                            if (Strings.Exists(strTmp[0]))
-                            {
-                                varResult.Add(strSectionName, strTmp[0], strTmp[1]);
-                            }
+                            if (!String.IsNullOrEmpty(strTmp[0])) varResult.Add(strSectionName, strTmp[0], strTmp[1]);
                         }
                         else
                         {
@@ -41,7 +39,7 @@ namespace ik.Utils
                     }
                     else
                     {
-                        bool isPair = false;
+                        var isPair = false;
 
                         if (intTmp < args.Length - 2)
                         {

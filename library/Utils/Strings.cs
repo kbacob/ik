@@ -17,9 +17,9 @@ namespace ik.Utils
         /// <returns></returns>
         static private string ConvertFromWildmaskToRegex(string strPattern)
         {
-            if(Exists(strPattern))
+            if(!String.IsNullOrEmpty(strPattern))
             {
-                string strRegexPattern = "";
+                var strRegexPattern = "";
 
                 foreach (char chrSymbol in strPattern)
                 {
@@ -67,24 +67,11 @@ namespace ik.Utils
         }
 
         /// <summary>
-        /// Проверяет строку на существование и не нулевую длину
-        /// </summary>
-        /// <param name="strCheckedString">Указатель на строку для проверки</param>
-        /// <returns>true, если строка существует и её длина не нулевая</returns>
-        public static bool Exists(string strCheckedString)
-        {
-            if (strCheckedString != null)
-                if (strCheckedString.Length > 0) return true;
-
-            return false;
-        }
-
-        /// <summary>
         /// Проверяет список строк на существование и не нулевую длину всего списка и каждой строки в списке
         /// </summary>
         /// <param name="strCheckedStringsList">Указатель на список строк</param>
-        /// <returns>true, если переданный список существует, как и всё строки в нём</returns>
-        public static bool Exists(string[] strCheckedStringsList)
+        /// <returns>false, если переданный список существует, как и всё строки в нём</returns>
+        public static bool IsNullOrEmpty(string[] strCheckedStringsList)
         {
             if (strCheckedStringsList != null)
             {
@@ -92,12 +79,12 @@ namespace ik.Utils
                 {
                     foreach (string strTmp in strCheckedStringsList)
                     {
-                        if (!Exists(strTmp)) return false;
+                        if (String.IsNullOrEmpty(strTmp)) return true;
                     }
-                    return true;
+                    return false;
                 }
             }
-            return false;
+            return true;
         }
 
         /// <summary>
@@ -134,7 +121,7 @@ namespace ik.Utils
         {
             if (strForCheck == null || strPattern == null) throw new ArgumentNullException();
 
-            Match mt = Regex.Match(strForCheck, strPattern);
+            var mt = Regex.Match(strForCheck, strPattern);
 
             if (mt != null) return mt.Success;
 

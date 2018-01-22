@@ -11,22 +11,15 @@ namespace ik.Net
     {
         public bool DownloadFile(string strUrl, string strStorePath)
         {
-            if(Strings.Exists(strUrl) && Strings.Exists(strStorePath))
-            {
-                WebClient webClient = new WebClient();
+            if (String.IsNullOrEmpty(strUrl) && String.IsNullOrEmpty(strStorePath)) throw new ArgumentNullException();
 
-                strStorePath = Files.FixPathByOS(strStorePath);
-                
-                if(Files.Exists(strStorePath))
-                {
-                    File.Delete(strStorePath);
-                }
-                
-                webClient.DownloadFile(strUrl, strStorePath);
+            var webClient = new WebClient();
 
-                return Files.Exists(strStorePath);
-            }
-            throw new ArgumentNullException();
+            strStorePath = Files.FixPathByOS(strStorePath);
+            if(Files.Exists(strStorePath)) File.Delete(strStorePath);
+            webClient.DownloadFile(strUrl, strStorePath);
+
+            return Files.Exists(strStorePath);
         }
     }
 }

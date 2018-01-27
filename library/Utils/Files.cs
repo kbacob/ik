@@ -4,8 +4,10 @@ namespace ik.Utils
 {
     using System;
     using System.IO;
+    using System.Text;
     using System.Text.RegularExpressions;
     using System.Runtime.InteropServices;
+    using System.Security.Cryptography;
 
     /// <summary>
     ///  Вспомогательные методы для работы с файловой системой, именами и путями.
@@ -119,6 +121,50 @@ namespace ik.Utils
                 if (OS == OSPlatform.Linux || OS == OSPlatform.OSX) return strPathForFix.Replace(@"\", @"/");
             }
             return strPathForFix;
+        }
+
+        /// <summary>
+        /// Посчитать MD5-Hash файла и вернуть его в виде строки
+        /// </summary>
+        /// <param name="strFileName">Файл для расчёта</param>
+        /// <returns></returns>
+        static public string CalcMD5(string strFileName)
+        {
+            string strResult = null;
+
+            if (String.IsNullOrEmpty(strFileName)) throw new ArgumentNullException();
+            if (Exists(strFileName))
+            {
+                var objStream = File.Open(strFileName, FileMode.Open, FileAccess.Read);
+
+                if(objStream != null && objStream.CanRead)
+                {
+                    var md5 = MD5.Create();
+                    var hash = md5.ComputeHash(objStream);
+
+                    objStream.Close();
+                    strResult = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                    md5.Clear();
+                }
+            }
+            return strResult;
+        }
+        
+        /// <summary>
+        /// Расчитать MD5-Hash только атрибутов файла, в качестве быстрой альтернативы полному чтению всего файла.
+        /// Рачёт будет сделан из строки "ИМЯ_ФАЙЛА_БЕЗ_ПУТИ/РАЗМЕР/ДАТА_СОЗДАНИЯ/ДАТА_ИЗМЕНЕНИЯ"
+        /// </summary>
+        /// <param name="strFileName">Файл для расчёта</param>
+        /// <returns></returns>
+        static public string CalcMD5fast(string strFileName)
+        {
+            if (String.IsNullOrEmpty(strFileName)) throw new ArgumentNullException();
+
+            var strTimeFormat = "yyyyMMddHHmmssffff";
+            var fileInfo = new FileInfo(strFileName);
+            var strETagSource = GetOnlyName(strFileName) + "/" + fileInfo.Length.ToString() + "/" + fileInfo.CreationTimeUtc.ToString(strTimeFormat) + "/" + fileInfo.LastWriteTimeUtc.ToString(strTimeFormat);
+
+            return Strings.CalcMD5(ref strETagSource);
         }
     }
 }

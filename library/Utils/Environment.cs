@@ -43,6 +43,18 @@ namespace ik.Utils
         }
 
         /// <summary>
+        /// Возвращает текстовое описание платформы запуска
+        /// </summary>
+        /// <returns></returns>
+        static public string GetOSName()
+        {
+            if (GetOS() == OSPlatform.Linux) return "unix/linux";
+            else if (GetOS() == OSPlatform.Windows) return "windows";
+            else if (GetOS() == OSPlatform.OSX) return "osx";
+            else return "unknown";
+        }
+
+        /// <summary>
         /// Получить значение переменной окружения.
         /// </summary>
         /// <param name="strVariableName">Название переменной окружения, обрамлять в % не нужно</param>

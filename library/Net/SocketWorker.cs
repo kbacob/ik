@@ -6,6 +6,7 @@ namespace ik.Net
     using System.Net;
     using System.Net.Sockets;
     using System.Collections.Generic;
+    using System.Collections.Specialized;
     using ik.Utils;
 
     /// <summary>
@@ -113,9 +114,13 @@ namespace ik.Net
             switch (socketWorkerItem.SocketWorkerEntryType)
             {
                 case SocketWorkerEntryType.Url:
-                    var strEntryPoint = clientHeader["EntryPoint"];
+                    if (!String.IsNullOrEmpty(clientHeader["EntryPoint"]))
+                    {
+                        var strEntryPoint = clientHeader["EntryPoint"];
 
-                    if(!String.IsNullOrEmpty(strEntryPoint)) return Strings.Contains(strEntryPoint, socketWorkerItem.strEntryPointPattern, socketWorkerItem.SocketWorkerEntryAnalysisType);
+                        return Strings.Contains(strEntryPoint, socketWorkerItem.strEntryPointPattern, socketWorkerItem.SocketWorkerEntryAnalysisType);
+                    }
+
                     break;
 
                 case SocketWorkerEntryType.Command:
@@ -163,9 +168,14 @@ namespace ik.Net
             {
                 var objStream = tcpStateInfo.GetStream();
                 var strRawClientRequestHeader = ReadClientData(objStream);
-                var headerRequest = new ClientHeader(strRawClientRequestHeader, new Dictionary<string, string>() { { "ClientIP", tcpStateInfo.Client.RemoteEndPoint.ToString() } });
 
-                Do(ref headerRequest, ref objStream);
+                if (!String.IsNullOrEmpty(strRawClientRequestHeader))
+                {
+                    var headerRequest = new ClientHeader(strRawClientRequestHeader);
+
+                    headerRequest.Add("ClientIP", tcpStateInfo.Client.RemoteEndPoint.ToString());
+                    Do(ref headerRequest, ref objStream);
+                } 
                 tcpStateInfo.Close();
             }
             return;

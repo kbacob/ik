@@ -9,7 +9,7 @@ namespace ConsoleApp1
     using ik.Utils;
 
     /// <summary>
-    ///  Teas app
+    ///  Test app
     /// </summary>
     class Program
     {

@@ -7,52 +7,48 @@ namespace ik.Net
     using System.Net;
     using System.Net.Sockets;
 
-    class SocketListener
+    class SocketListener : TcpListener
     {
         public delegate void ConnectionDispatcher(Object tcpClient);
 
-        private TcpListener tcpListener;
         private Thread threadListener;
         private ConnectionDispatcher fnConnectionDispatcher;
 
         private const int intListenerSleepInterval = 250;
         private static bool boolStopListener;
 
-        public SocketListener(IPAddress ipAddress, int intPort)
+        public SocketListener(IPAddress ipAddress, int intPort) : base(ipAddress, intPort)
         {
-            tcpListener = new TcpListener(ipAddress, intPort);
         }
         ~SocketListener()
         {
             Stop();
             threadListener = null;
-            tcpListener = null;
         }
 
         public void Start(ConnectionDispatcher fnConnectionDispatcher)
         {
             this.fnConnectionDispatcher = fnConnectionDispatcher;
-            tcpListener.Start();
+            Start();
             boolStopListener = false;
             threadListener = new Thread(new ThreadStart(MainCycle));
             threadListener.Start();
         }
-        public void Stop()
+        public new void Stop()
         {
             boolStopListener = true;
-            //Thread.Sleep(500);
         }
 
         async private void MainCycle()
         {
-            while (boolStopListener == false)
+            while (!boolStopListener)
             {
-                var TcpClient = await tcpListener.AcceptTcpClientAsync();
+                var TcpClient = await AcceptTcpClientAsync();
 
                 ThreadPool.QueueUserWorkItem(new WaitCallback(fnConnectionDispatcher), TcpClient);
                 Thread.Sleep(intListenerSleepInterval);
             }
-            tcpListener.Stop();
+            base.Stop();
         }
     }
 }

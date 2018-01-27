@@ -3,7 +3,9 @@
 namespace ik.Utils
 {
     using System;
+    using System.Text;
     using System.Text.RegularExpressions;
+    using System.Security.Cryptography;
 
     /// <summary>
     /// Вспомогательные методы для работы со строковыми переменными.
@@ -221,6 +223,28 @@ namespace ik.Utils
                     return ReplaceByRegex(strOriginal, strPattern, strNew);
             }
             return null;
+        }
+
+        /// <summary>
+        /// Посчитать MD5-Hash и вернуть его в виде строки
+        /// </summary>
+        /// <param name="strSource">Строка для расчёта</param>
+        /// <returns></returns>
+        public static string CalcMD5(ref string strSource)
+        {
+            if (String.IsNullOrEmpty(strSource)) throw new ArgumentNullException();
+            string strResult = null;
+
+            using (var md5 = MD5.Create())
+            {
+                var bytes = Encoding.ASCII.GetBytes(strSource);
+                var hash = md5.ComputeHash(bytes);
+
+                strResult = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                md5.Clear();
+            }
+
+            return strResult;
         }
     }
 }

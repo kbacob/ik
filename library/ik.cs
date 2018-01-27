@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text;
+﻿// Copyright © 2017,2018 Igor Sergienko. Contacts: <kbacob@mail.ru>
 
 namespace ik
 {
@@ -26,6 +25,7 @@ namespace ik
             All                 = uint.MaxValue
         }
 
+        public const string strLibraryDesription = "ik's library, version 0.0.1 pre-alpha";
         public static int intMaxThreads = 4;
         public static LogFile.LogType flagsLogType = LogFile.LogType.Console | LogFile.LogType.Debug;
         public static LogFile.TimeFormat enumTimeFormat = LogFile.TimeFormat.ShortLocalized;

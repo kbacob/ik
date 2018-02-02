@@ -1,23 +1,15 @@
 // Copyright © 2017,2018 Igor Sergienko. Contacts: <kbacob@mail.ru>
 
-namespace ik.Net
+namespace ik.Net.HTTP.Parsers
 {
     using System;
-    using System.Web;
-    using System.Collections.Specialized;
     using System.Text.RegularExpressions;
-    using System.Net;
-
+ 
     /// <summary>
     /// Парсинг заголовков клиентского запроса HTTP
     /// </summary>
-    public sealed class ClientHeader : WebHeaderCollection
+    public class Request : HTTP.Header
     {
-        /// <summary>
-        /// Пары key=value для query-части строки url-запроса.
-        /// </summary>
-        public NameValueCollection query = null;
-
         /// <summary>
         /// Разбираем Url запроса
         /// </summary>
@@ -30,7 +22,7 @@ namespace ik.Net
             string strQuery = null;
 
             var match = Regex.Match(Get("Uri"), @"^(?<Scheme>https*)\:\/\/(?<Address>.+?)(?<Path>\/.*)");
-            if (match != null && match.Groups.Count > 1)
+            if (match.Success)
             {
                 strScheme = match.Groups["Scheme"].Value;
                 strAddress = match.Groups["Address"].Value;
@@ -48,7 +40,7 @@ namespace ik.Net
             if (strUrl.Contains("#"))
             {
                 match = Regex.Match(strUrl, @"^(?<Path>\/.*?)\#(?<Bookmark>.*)");
-                if (match != null && match.Groups.Count > 1)
+                if (match.Success)
                 {
                     strUrl = match.Groups["Path"].Value;
                     strBookmark = match.Groups["Bookmark"].Value;
@@ -60,7 +52,7 @@ namespace ik.Net
             if (strUrl.Contains("?"))
             {
                 match = Regex.Match(strUrl, @"^(?<Path>\/.*)\?(?<Query>.*)");
-                if (match != null && match.Groups.Count > 1)
+                if (match.Success)
                 {
                     strUrl = match.Groups["Path"].Value;
                     strQuery = match.Groups["Query"].Value;
@@ -71,7 +63,7 @@ namespace ik.Net
 
             if (!String.IsNullOrEmpty(strQuery))
             {
-                query = HttpUtility.ParseQueryString(HttpUtility.UrlDecode(strQuery));
+                Query = new Query(strQuery);
             }
 
             Add("EntryPoint", strUrl);    // Path-часть зароса
@@ -87,9 +79,8 @@ namespace ik.Net
         /// <param name="strClientRequest">RAW-строка запроса, полученная методом чтения NetworkStream клиентского соединения.</param>
         /// <param name="dEnviromentVariables">Дополнительные значения в создаваемы словарь. Например, ClientIp, данные о котоом знает диспечер Socket-соединения</param>
         /// 
-        public ClientHeader(string strClientRequest)
+        public Request(string strClientRequest) : base()
         {
-            Clear();
             if (String.IsNullOrEmpty(strClientRequest)) throw new ArgumentNullException("strClientRequest");
 
             var strStrings = strClientRequest.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
@@ -97,13 +88,15 @@ namespace ik.Net
             {
                 if (!String.IsNullOrEmpty(strStrings[0]))
                 {
-                    var match = Regex.Match(strStrings[0], @"^(?<Method>\S+)\s+(?<Uri>\S+)\s+(?<Protocol>\S+).*$"); 
+                    var match = Regex.Match(strStrings[0], @"^(?<Method>\S+)\s+(?<Uri>\S+)\s+(?<ProtocolFamily>\S+)\/(?<ProtocolVersion>\d+)\.(?<ProtocolSubversion>\d+).*$"); 
 
-                    if (match != null && match.Groups.Count > 1)
+                    if (match.Success)
                     {
                         Add("Method", match.Groups["Method"].Value);
                         Add("Uri", match.Groups["Uri"].Value);
-                        Add("Protocol", match.Groups["Protocol"].Value);
+                        Add("Protocol", match.Groups["ProtocolFamily"].Value);
+                        Add("ProtocolVersion", match.Groups["ProtocolVersion"].Value);
+                        Add("ProtocolSubversion", match.Groups["ProtocolSubversion"].Value);
                     }
                 }
             }
@@ -116,7 +109,7 @@ namespace ik.Net
                     {
                         var match = Regex.Match(strStrings[intTmp], @"^(?<Key>\S+)\:\s*(?<Value>.*)?$");
 
-                        if (match != null && match.Groups.Count > 1)
+                        if (match.Success)
                         {
                              Add(match.Groups["Key"].Value, match.Groups["Value"].Value);
                         }

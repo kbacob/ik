@@ -3,45 +3,45 @@
 namespace ik.Net
 {
     using System;
+    using System.Collections.Generic;
     using System.Net;
     using System.Net.Sockets;
     using System.IO;
     using System.Text;
     using ik.Utils;
-    using System.Collections.Generic;
+    using ik.Net.HTTP;
 
     /// <summary>
     /// Подготовка и отправка заголовков и тела ответа сервера
     /// </summary>
-    public sealed class Response : MemoryStream
+    public sealed class Response : Header
     {
-        private List<KeyValuePair<string, string>> LResponceHeaderItems;
-
         private string strSourceFile = null;
         private string strResponseHeader = null;
         private string strResponseData = null;
-        
+        private Settings Settings = null;
+
+        private void MakeDefaultSettings()
+        {
+            Settings = new Settings
+            {
+                { "Main", "1", "2" }
+            };
+
+        }
+
         private void AddDefaultHeaderItems()
         {
-            LResponceHeaderItems.Add(HTTPHeader.Date(DateTime.Now));
-            LResponceHeaderItems.Add(HTTPHeader.Allow("GET, POST"));
-            LResponceHeaderItems.Add(HTTPHeader.CacheControl());
-            LResponceHeaderItems.Add(HTTPHeader.Connection());
-            LResponceHeaderItems.Add(HTTPHeader.Server(null));
+            Add(HeaderItem.Type.Date, DateTime.UtcNow.ToString("r"));
+            Add(HeaderItem.Type.Allow);
+            Add(HeaderItem.Type.CacheControl);
+            Add(HeaderItem.Type.Connection);
+            Add(HeaderItem.Type.Pragma, "no-cache");
+            Add(HeaderItem.Type.Server, Main.strLibraryDesription + " (" + Utils.Environment.GetOSName() + ")");
         }
         private void MakeHeaderString()
         {
-            StringBuilder stringBuilder = new StringBuilder(strResponseHeader);
-
-            if(LResponceHeaderItems.Count > 0)
-            {
-                foreach(var Item in LResponceHeaderItems)
-                {
-                    stringBuilder.Append("\n" + Item.Key + ": " + Item.Value);
-                }
-            }
-            stringBuilder.Append("\n\n");
-            strResponseHeader = stringBuilder.ToString();
+            strResponseHeader += ToString();
         }
         private void MakeResponseHeader(HttpStatusCode httpStatusCode)
         {
@@ -51,11 +51,10 @@ namespace ik.Net
         {
             if (strResponce == null) strResponce = "";
 
-            LResponceHeaderItems.Add(HTTPHeader.ContentType(ContentTypes.GetContentType("html")));
-            LResponceHeaderItems.Add(HTTPHeader.ContentLength((ulong)strResponce.Length));
-            if(httpStatusCode == HttpStatusCode.OK) LResponceHeaderItems.Add(HTTPHeader.ETag(Strings.CalcMD5(ref strResponce)));
+            Add(HeaderItem.Type.ContentType, ContentTypes.GetContentType("html"));
+            Add(HeaderItem.Type.ContentLength, strResponce.Length.ToString());
+            Add(HeaderItem.Type.ETag, Strings.CalcMD5(ref strResponce));
             AddDefaultHeaderItems();
-
             MakeResponseHeader(httpStatusCode);
             strResponseData = strResponce;
             MakeHeaderString();
@@ -66,26 +65,19 @@ namespace ik.Net
         /// </summary>
         /// <param name="strResponce">Тело ответа (HTML-документ, или иные текстовые данные, JSON к примеру</param>
         /// <param name="httpStatusCode">Код ответа (200, 404, 500, etc)</param>
-        public Response(string strResponce, HttpStatusCode httpStatusCode)
+        public Response(string strResponce, HttpStatusCode httpStatusCode) 
         {
-            LResponceHeaderItems = new List<KeyValuePair<string, string>>();
-
-            if(strResponce != null) MakeSimpleResponse(strResponce, httpStatusCode);
+            MakeDefaultSettings();
+            if (strResponce != null) MakeSimpleResponse(strResponce, httpStatusCode);
             else MakeSimpleResponse("", httpStatusCode);
         }
-
-        /// <summary>
-        /// Ответ на основе массива строк данных и кода HTTP-статуса
-        /// </summary>
-        /// <param name="strResponce">Массив строк с телом ответа (HTML-документ, или иные текстовые данные, JSON к примеру</param>
-        /// <param name="httpStatusCode">Код ответа (200, 404, 500, etc)</param>
-        public Response(string[] strResponse, HttpStatusCode httpStatusCode)
+        public Response(string[] strResponse, HttpStatusCode httpStatusCode) 
         {
-            StringBuilder stringBuilder = new StringBuilder("");
-
-            LResponceHeaderItems = new List<KeyValuePair<string, string>>();
-            if (strResponse != null && strResponse.Length > 0)
+            MakeDefaultSettings();
+            if (!Strings.IsNullOrEmpty(strResponse))
             {
+                var stringBuilder = new StringBuilder("");
+
                 foreach (var Item in strResponse)
                 {
                     stringBuilder.Append(Item);
@@ -94,24 +86,23 @@ namespace ik.Net
             }
             else MakeSimpleResponse("", httpStatusCode);
         }
-        
         /// <summary>
         /// Ответ на основе бинарного файла. Код ответа и типа контекста берётся на основе доступности и типа файла
         /// </summary>
         /// <param name="strPath">Путь к файлу</param>
-        public Response(string strPath)
+        public Response(string strPath) 
         {
+            MakeDefaultSettings();
             if (String.IsNullOrEmpty(strPath)) throw new ArgumentNullException();
-            LResponceHeaderItems = new List<KeyValuePair<string, string>>();
 
             if (Files.Exists(strPath))
             {
                 var FileInfo = new FileInfo(strPath);
 
-                LResponceHeaderItems.Add(HTTPHeader.ContentType(ContentTypes.GetContentType(Files.GetOnlyExtension(strPath))));
-                LResponceHeaderItems.Add(HTTPHeader.ContentLength((ulong)FileInfo.Length));
-                LResponceHeaderItems.Add(HTTPHeader.LastModified(FileInfo.LastWriteTime));
-                LResponceHeaderItems.Add(HTTPHeader.ETag(Files.CalcMD5fast(strPath)));
+                Add(HeaderItem.Type.ContentType, ContentTypes.GetContentType(Files.GetOnlyExtension(strPath)));
+                Add(HeaderItem.Type.ContentLength, FileInfo.Length.ToString());
+                Add(HeaderItem.Type.LastModified, FileInfo.LastWriteTime.ToUniversalTime().ToString("s"));
+                Add(HeaderItem.Type.ETag, Files.CalcMD5fast(strPath));
                 AddDefaultHeaderItems();
 
                 MakeResponseHeader(HttpStatusCode.OK);
@@ -122,6 +113,11 @@ namespace ik.Net
             {
                 MakeSimpleResponse("404", HttpStatusCode.NotFound);
             }
+        }
+
+        ~Response()
+        {
+            Settings.Clear();
         }
 
         /// <summary>

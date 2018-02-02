@@ -1,13 +1,13 @@
 // Copyright © 2017,2018 Igor Sergienko. Contacts: <kbacob@mail.ru>
 
-namespace ik.Net
+namespace ik.Net.HTTP
 {
     using System;
     using System.IO;
     using System.Net;
     using ik.Utils;
 
-    public class HTTPClient
+    public class Client
     {
         public bool DownloadFile(string strUrl, string strStorePath)
         {

@@ -1,6 +1,6 @@
 ﻿// Copyright В© 2017,2018 Igor Sergienko. Contacts: <kbacob@mail.ru>
 
-namespace ik.Net
+namespace ik.Net.HTTP
 {
     using System;
     using System.Collections.Generic;
@@ -9,7 +9,7 @@ namespace ik.Net
     /// <summary>
     /// TODO: что то типа виртуальных каталогов Apache
     /// </summary>
-    public class HTTPAlias : Dictionary<string, string>
+    public class Alias : Dictionary<string, string>
     {
         
     }

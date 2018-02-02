@@ -25,7 +25,7 @@ namespace ik.Utils
         /// Определяем, на чём нас запустили.
         /// </summary>
         /// <returns></returns>
-        static public OSPlatform GetOS()
+        public static OSPlatform GetOS()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -46,7 +46,7 @@ namespace ik.Utils
         /// Возвращает текстовое описание платформы запуска
         /// </summary>
         /// <returns></returns>
-        static public string GetOSName()
+        public static string GetOSName()
         {
             if (GetOS() == OSPlatform.Linux) return "unix/linux";
             else if (GetOS() == OSPlatform.Windows) return "windows";
@@ -59,7 +59,7 @@ namespace ik.Utils
         /// </summary>
         /// <param name="strVariableName">Название переменной окружения, обрамлять в % не нужно</param>
         /// <returns>Значение или null</returns>
-        static public string GetVariable(string strVariableName)
+        public static string GetVariable(string strVariableName)
         {
             if(String.IsNullOrEmpty(strVariableName)) throw new ArgumentNullException();
             
@@ -71,7 +71,7 @@ namespace ik.Utils
         /// </summary>
         /// <param name="hostDirectory">Предопределённый системный каталог</param>
         /// <returns></returns>
-        static public string GetDirectory(HostDirectory hostDirectory)
+        public static string GetDirectory(HostDirectory hostDirectory)
         {
             switch(hostDirectory)
             {

@@ -1,21 +1,20 @@
 // Copyright © 2017,2018 Igor Sergienko. Contacts: <kbacob@mail.ru>
 
-namespace ik.Net
+namespace ik.Utils
 {
     using System;
     using System.IO;
     using System.Collections.Generic;
     using System.Text.RegularExpressions;
-    using ik.Utils;
-
+    
     /// <summary>
     /// Реализация определения Content Type / MIME Type
     /// Данные о типах берутся из внешнего файла
     /// </summary>
-    static public class ContentTypes
+    public static class ContentTypes
     {
-        static private Dictionary<string, List<string>> DTypes = null; // "content/type", {"extension1", "extension2", "etc"}
-        static public string strMimeTypesListUrl = @"https://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types";
+        private static Dictionary<string, List<string>> DTypes = null; // "content/type", {"extension1", "extension2", "etc"}
+        public static string strMimeTypesListUrl = @"https://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types";
 
         /// <summary>
         ///  Инициализирует систему работы с опрелениями типов контента
@@ -26,7 +25,7 @@ namespace ik.Net
             if (DTypes == null)
             {
                 var strMimeTypesFilePath = Files.FixPathByOS(Utils.Environment.GetDirectory(Utils.Environment.HostDirectory.Tmp) + @"\" + Files.GetOnlyName(strMimeTypesListUrl));
-                var hc = new HTTPClient();
+                var hc = new Net.HTTP.Client();
                 
                 DTypes = new Dictionary<string, List<string>>();
                 

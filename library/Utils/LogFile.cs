@@ -14,7 +14,7 @@ namespace ik.Utils
     /// <para>При необходимости кастомизируется префикс времени и тип сообщения</para>
     /// <para>Сейчас пишет на консоль или в файл. В планах syslog Windows и Linux, если конечно в Net.Standart это возможно вообще</para>
     /// </summary>
-    static public class LogFile
+    public static class LogFile
     {
         /// <summary>
         ///  Тип log-файла
@@ -84,12 +84,12 @@ namespace ik.Utils
             Panic
         }
 
-        static private Dictionary<MessageType, String> LMessageTypePrefix = null;
-        static private Dictionary<TimeFormat, String> LTimeFormat = null;
-        static private LogType logType = LogType.Debug | LogType.File;
-        static private TimeFormat timeFormat;
-        static private string strLogFile = @"application.log";
-        static private OSPlatform OS = Environment.GetOS();
+        private static Dictionary<MessageType, String> LMessageTypePrefix = null;
+        private static Dictionary<TimeFormat, String> LTimeFormat = null;
+        private static LogType logType = LogType.Debug | LogType.File;
+        private static TimeFormat timeFormat;
+        private static string strLogFile = @"application.log";
+        private static OSPlatform OS = Environment.GetOS();
 
         /// <summary>
         /// Инициализация системы записи журнала сообщений
@@ -98,7 +98,7 @@ namespace ik.Utils
         /// <param name="timeFormat">Формат записи времени сообщения</param>
         /// <param name="strLogFile">Имя файла журнала сообщений</param>
         /// <returns></returns>
-        static public void Init(LogType logType = LogType.Debug | LogType.File , TimeFormat timeFormat = TimeFormat.ShortLocalized, string strLogFile = @"application.log")
+        public static void Init(LogType logType = LogType.Debug | LogType.File , TimeFormat timeFormat = TimeFormat.ShortLocalized, string strLogFile = @"application.log")
         {
             LogFile.logType = logType;
             LogFile.timeFormat = timeFormat;
@@ -128,7 +128,7 @@ namespace ik.Utils
         /// <summary>
         /// Закрытие журнала сообщений
         /// </summary>
-        static public void Close()
+        public static void Close()
         {
             WriteLine("End", MessageType.Verbose, TimeFormat.None);
 
@@ -144,7 +144,7 @@ namespace ik.Utils
         /// </summary>
         /// <param name="messageType">Тип сообщения</param>
         /// <param name="strPrefix">Префикс для указания типа сообщения</param>
-        static public void SetMessagePrefix(MessageType messageType, string strPrefix)
+        public static void SetMessagePrefix(MessageType messageType, string strPrefix)
         {
             if (LMessageTypePrefix != null)
             {
@@ -161,7 +161,7 @@ namespace ik.Utils
         /// </summary>
         /// <param name="timeFormat">Тип формата префикса времени сообщения</param>
         /// <param name="strTimeFormat">Строка, описывающая формат префикса времени сообщения</param>
-        static public void SetTimeFormat(TimeFormat timeFormat, string strTimeFormat)
+        public static void SetTimeFormat(TimeFormat timeFormat, string strTimeFormat)
         {
             if (LTimeFormat != null)
             {
@@ -178,7 +178,7 @@ namespace ik.Utils
         /// <param name="strText">Текст соообщения</param>
         /// <param name="messageType">Тип сообщения. По умолчанию это Verbose, и если вы ничего не меняли, то префикс для таких сообщений отсутствует</param>
         /// <param name="timeFormat">Формат указания времени сообщения. По умолчанию будет использован формат, переданный LogFile.Init()</param>
-        static public void WriteLine(string strText, MessageType messageType = MessageType.Verbose, TimeFormat timeFormat = TimeFormat.Default)
+        public static void WriteLine(string strText, MessageType messageType = MessageType.Verbose, TimeFormat timeFormat = TimeFormat.Default)
         {
             if (LMessageTypePrefix == null || LTimeFormat == null) return;
             if (LMessageTypePrefix.Count == 0 || LTimeFormat.Count == 0) return;
@@ -229,13 +229,13 @@ namespace ik.Utils
             }
         }
 
-        static public void Verbose(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Verbose, timeFormat);
-        static public void Trace(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Trace, timeFormat);
-        static public void Debug(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Debug, timeFormat);
-        static public void Info(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Info, timeFormat);
-        static public void Warning(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Warning, timeFormat);
-        static public void Error(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Error, timeFormat);
-        static public void Critical(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Critical, timeFormat);
-        static public void Panic(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Panic, timeFormat);
+        public static void Verbose(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Verbose, timeFormat);
+        public static void Trace(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Trace, timeFormat);
+        public static void Debug(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Debug, timeFormat);
+        public static void Info(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Info, timeFormat);
+        public static void Warning(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Warning, timeFormat);
+        public static void Error(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Error, timeFormat);
+        public static void Critical(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Critical, timeFormat);
+        public static void Panic(string strText, TimeFormat timeFormat = TimeFormat.Default) => WriteLine(strText, MessageType.Panic, timeFormat);
     }
 }

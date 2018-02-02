@@ -8,7 +8,7 @@ namespace ik.Types
     /// Реализация трёхмерного массива хранимых строковых переменных вида ["Секция"].["Параметр"]."Значение" на основе двух Dictionary.
     /// Мне понадобилось, когда не понравился способ чтения классических ini-файлов от Microsoft
     /// </summary> 
-    public sealed class Variables : Dictionary<string, Dictionary<string, string>>  
+    public class Variables : Dictionary<string, Dictionary<string, string>>  
     {
         /// <summary>
         /// Добавление новой секции
@@ -169,6 +169,35 @@ namespace ik.Types
                 return this[strSectionName][strParamName];
             }
             return null;
+        }
+
+        /// <summary>
+        /// Копирует всё содержимое
+        /// </summary>
+        /// <param name="varDestination"></param>
+        public void CopyTo(Variables varDestination)
+        {
+            if(Count>0)
+            {
+                if(varDestination != null)
+                {
+                    if (Count > 0)
+                    {
+                        for (var intSectionIndex = 0; intSectionIndex < Keys.Count; intSectionIndex++)
+                        {
+                            var strSectionName = SectionNameByIndex(intSectionIndex);
+
+                            for (var intParam = 0; intParam < this[strSectionName].Count; intParam++)
+                            {
+                                var strKey = ParamNameByIndex(intSectionIndex, intParam);
+                                var strValue = ValueByIndex(intSectionIndex, intParam);
+
+                                varDestination.Add(strSectionName, strKey, strValue);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

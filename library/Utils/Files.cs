@@ -4,7 +4,6 @@ namespace ik.Utils
 {
     using System;
     using System.IO;
-    using System.Text;
     using System.Text.RegularExpressions;
     using System.Runtime.InteropServices;
     using System.Security.Cryptography;
@@ -20,15 +19,15 @@ namespace ik.Utils
         /// </summary>
         /// <param name="strName">Полное имя файла с путём</param>
         /// <returns>Имя файла с расширением</returns>
-        static public string GetOnlyName(string strName)
+        public static string GetOnlyName(string strName)
         {
             if (String.IsNullOrEmpty(strName)) throw new ArgumentNullException();
 
             if (strName.Contains(@"\") || strName.Contains(@"/"))
             {
-                var mt = Regex.Match(strName, @".*[\\\/](.*)\Z");
+                var mt = Regex.Match(strName, @".*[\\\/](?<FileName>.*)\Z");
 
-                if (mt.Groups.Count == 2) return mt.Groups[1].Value;
+                if (mt.Success) return mt.Groups["FileName"].Value;
             }
             return strName;
         }
@@ -39,15 +38,15 @@ namespace ik.Utils
         /// </summary>
         /// <param name="strName">Полное имя файла с путём</param>
         /// <returns>Путь к файлу</returns>
-        static public string GetOnlyPath(string strName)
+        public static string GetOnlyPath(string strName)
         {
             if (String.IsNullOrEmpty(strName)) throw new ArgumentNullException();
 
             if (strName.Contains(@"\") || strName.Contains(@"/"))
             {
-                var mt = Regex.Match(strName, @"(.*)?[\\\/].*\Z");
+                var mt = Regex.Match(strName, @"(?<FilePath>.*)?[\\\/].*\Z");
 
-                if (mt.Groups.Count == 2) return FixPathByOS(mt.Groups[1].Value);
+                if (mt.Success) return FixPathByOS(mt.Groups["FilePath"].Value);
             }
             return "";
         }
@@ -58,7 +57,7 @@ namespace ik.Utils
         /// </summary>
         /// <param name="strName">Полное имя файла с путём или просто имя файла с расширением</param>
         /// <returns>Расширение файла</returns>
-        static public string GetOnlyExtension(string strName)
+        public static string GetOnlyExtension(string strName)
         {
             if (String.IsNullOrEmpty(strName)) throw new ArgumentNullException();
 
@@ -66,9 +65,9 @@ namespace ik.Utils
 
             if (strTmp.Contains("."))
             {
-                var mt = Regex.Match(strTmp, @".*\.(.+)?\Z");
+                var mt = Regex.Match(strTmp, @".*\.(?<FileExtension>.+)?\Z");
 
-                if (mt.Groups.Count == 2) return mt.Groups[1].Value;
+                if (mt.Success) return mt.Groups["FileExtension"].Value;
             }
             return "";
         }
@@ -78,7 +77,7 @@ namespace ik.Utils
         /// </summary>
         /// <param name="strName">Имя файла с путём</param>
         /// <returns>true, если указанный файл существует</returns>
-        static public bool Exists(string strName)
+        public static bool Exists(string strName)
         {
             if (String.IsNullOrEmpty(strName)) throw new ArgumentNullException();
 
@@ -92,7 +91,7 @@ namespace ik.Utils
         /// <param name="strFileMasksList">Список имён и/мом wildcard-масок</param>
         /// <param name="boolCaseSentetivity">Учитывать регистр символов при сравнении</param>
         /// <returns></returns>
-        static public bool EqualByMask(string strFileName, string[] strFileMasksList, bool boolCaseSentetivity = false)
+        public static bool EqualByMask(string strFileName, string[] strFileMasksList, bool boolCaseSentetivity = false)
         {
             if (String.IsNullOrEmpty(strFileName) || Strings.IsNullOrEmpty(strFileMasksList)) throw new ArgumentNullException();
 
@@ -109,7 +108,7 @@ namespace ik.Utils
         /// </summary>
         /// <param name="strPathForFix"></param>
         /// <returns></returns>
-        static public string FixPathByOS(string strPathForFix)
+        public static string FixPathByOS(string strPathForFix)
         {
             if(String.IsNullOrEmpty(strPathForFix)) throw new ArgumentNullException();
 
@@ -128,7 +127,7 @@ namespace ik.Utils
         /// </summary>
         /// <param name="strFileName">Файл для расчёта</param>
         /// <returns></returns>
-        static public string CalcMD5(string strFileName)
+        public static string CalcMD5(string strFileName)
         {
             string strResult = null;
 
@@ -156,7 +155,7 @@ namespace ik.Utils
         /// </summary>
         /// <param name="strFileName">Файл для расчёта</param>
         /// <returns></returns>
-        static public string CalcMD5fast(string strFileName)
+        public static string CalcMD5fast(string strFileName)
         {
             if (String.IsNullOrEmpty(strFileName)) throw new ArgumentNullException();
 
